@@ -1,5 +1,6 @@
 use std::iter::zip;
 
+use itertools::Itertools;
 use nom::{
     bytes::complete::tag,
     character::complete::{digit1, multispace0, space0},
@@ -24,27 +25,21 @@ fn parse(input: &str) -> (impl Iterator<Item = usize>, impl Iterator<Item = usiz
     (times.into_iter(), distances.into_iter())
 }
 
-pub fn solve(input: &str) -> usize {
-    let (times, distances) = parse(input);
-    zip(times, distances)
-        .map(|(time, distance)| (1..time).filter(|t| (time - t) * t > distance).count())
-        .product()
+fn n_wins(time: usize, distance: usize) -> usize {
+    (1..time).filter(|t| (time - t) * t > distance).count()
 }
 
-fn combine(nums: impl Iterator<Item = usize>) -> usize {
-    nums.fold(String::new(), |mut acc, n| {
-        acc.push_str(&n.to_string());
-        acc
-    })
-    .parse()
-    .unwrap()
+pub fn solve(input: &str) -> usize {
+    let (times, distances) = parse(input);
+    zip(times, distances).map(|(t, d)| n_wins(t, d)).product()
 }
 
 pub fn solve_2(input: &str) -> usize {
-    let (times, distances) = parse(input);
-    let time = combine(times);
-    let distance = combine(distances);
-    (1..time).filter(|t| (time - t) * t > distance).count()
+    let (mut times, mut distances) = parse(input);
+    n_wins(
+        times.join("").parse().unwrap(),
+        distances.join("").parse().unwrap(),
+    )
 }
 
 #[cfg(test)]
