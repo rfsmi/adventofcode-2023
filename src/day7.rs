@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use itertools::Itertools;
 use nom::{
     character::complete::{alphanumeric1, digit1, multispace0, space0},
     combinator::map_res,
@@ -69,10 +70,11 @@ where
             pair(alphanumeric1, preceded(space0, map_res(digit1, str::parse))),
         ))(input)
     }
-    let (_, mut hands) = parse(input).unwrap();
-    hands.sort_by_key(|(h, _)| key(h));
+    let (_, hands) = parse(input).unwrap();
     hands
         .into_iter()
+        .map(|(hand, bid)| (key(hand), bid))
+        .sorted()
         .enumerate()
         .fold(0, |acc, (i, (_, bid))| acc + (i + 1) * bid)
 }
