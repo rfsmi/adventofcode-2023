@@ -69,29 +69,21 @@ pub fn solve_2(input: &str) -> usize {
     let path = main_loop(start, edges);
     let (mut left_turns, mut right_turns) = (0, 0);
     let (mut left_seeds, mut right_seeds) = (Vec::new(), Vec::new());
+    // Find all the spaces to the left and right of the path
     for (&prev, &pos, &next) in path.iter().cycle().tuple_windows().take(path.len()) {
-        let (left, right) = (turn_left(prev, pos), turn_right(prev, pos));
-        if next == left {
-            //    r
-            //  <-+ r
-            //    |
+        if next == turn_left(prev, pos) {
             left_turns += 1;
-            right_seeds.push(right);
-            right_seeds.push(turn_left(next, pos));
-        } else if next == right {
-            //    l
-            //  l +->
-            //    |
+        } else if next == turn_right(prev, pos) {
             right_turns += 1;
-            left_seeds.push(left);
-            left_seeds.push(turn_right(next, pos));
-        } else {
-            //    ^
-            //  l | r
-            //    |
-            left_seeds.push(left);
-            right_seeds.push(right);
         }
+        // These are the three possible cases
+        //    ^         r         l
+        //  l | r     <-+ r     l +->
+        //    |         |         |
+        left_seeds.push(turn_left(prev, pos));
+        left_seeds.push(turn_right(next, pos));
+        right_seeds.push(turn_right(prev, pos));
+        right_seeds.push(turn_left(next, pos));
     }
     // Whichever side has the most turns is the inside.
     let mut stack = if left_turns > right_turns {
