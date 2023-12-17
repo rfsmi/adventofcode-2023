@@ -16,56 +16,44 @@ fn parse(input: &str) -> Vec<Vec<usize>> {
         .collect()
 }
 
-fn run(grid: Vec<Vec<usize>>, min_straight: Option<usize>, max_straight: usize) -> usize {
+fn run(grid: Vec<Vec<usize>>, min_straight: usize, max_straight: usize) -> usize {
     let height = grid.len() as i32;
     let width = grid[0].len() as i32;
-    let mut heap: BinaryHeap<_> = [Reverse((0, (0, 0), None, 0))].into();
+    let mut heap: BinaryHeap<_> =
+        [Reverse((0, (0, 0), (1, 0))), Reverse((0, (0, 0), (0, 1)))].into();
     let mut seen = HashSet::new();
-    while let Some(Reverse((cost, (x, y), prev_dir, straight_length))) = heap.pop() {
+    while let Some(Reverse((cost, (x, y), (dx, dy)))) = heap.pop() {
         if (x, y) == (width - 1, height - 1) {
-            if min_straight.is_none() || straight_length >= min_straight.unwrap() {
-                return cost;
-            }
+            return cost;
         }
-        if !seen.insert(((x, y), prev_dir, straight_length)) {
+        if !seen.insert(((x, y), (dx, dy))) {
             continue;
         }
-        for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
-            if prev_dir == Some((-dx, -dy)) {
-                continue;
+        for (dx, dy) in [(dy, -dx), (-dy, dx)] {
+            let (mut x, mut y) = (x, y);
+            let mut cost = cost;
+            for i in 1..=max_straight {
+                x += dx;
+                y += dy;
+                if !(0..height).contains(&y) || !(0..width).contains(&x) {
+                    break;
+                }
+                cost += grid[y as usize][x as usize];
+                if i >= min_straight {
+                    heap.push(Reverse((cost, (x, y), (dx, dy))));
+                }
             }
-            if min_straight.is_some()
-                && straight_length < min_straight.unwrap()
-                && prev_dir.is_some()
-                && prev_dir.unwrap() != (dx, dy)
-            {
-                continue;
-            }
-            let straight_length = if prev_dir == Some((dx, dy)) {
-                straight_length + 1
-            } else {
-                1
-            };
-            if straight_length > max_straight {
-                continue;
-            }
-            let (x, y) = (x + dx, y + dy);
-            if !(0..height).contains(&y) || !(0..width).contains(&x) {
-                continue;
-            }
-            let cost = cost + grid[y as usize][x as usize];
-            heap.push(Reverse((cost, (x, y), Some((dx, dy)), straight_length)));
         }
     }
     panic!()
 }
 
 pub fn solve(input: &str) -> usize {
-    run(parse(input), None, 3)
+    run(parse(input), 0, 3)
 }
 
 pub fn solve_2(input: &str) -> usize {
-    run(parse(input), Some(4), 10)
+    run(parse(input), 4, 10)
 }
 
 #[cfg(test)]
