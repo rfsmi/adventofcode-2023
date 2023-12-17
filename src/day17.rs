@@ -1,7 +1,4 @@
-use std::{
-    cmp::Reverse,
-    collections::{BinaryHeap, HashSet},
-};
+use std::collections::{BTreeSet, HashSet};
 
 fn parse(input: &str) -> Vec<Vec<usize>> {
     input
@@ -19,10 +16,9 @@ fn parse(input: &str) -> Vec<Vec<usize>> {
 fn run(grid: Vec<Vec<usize>>, min_straight: usize, max_straight: usize) -> usize {
     let height = grid.len() as i32;
     let width = grid[0].len() as i32;
-    let mut heap: BinaryHeap<_> =
-        [Reverse((0, (0, 0), (1, 0))), Reverse((0, (0, 0), (0, 1)))].into();
+    let mut heap: BTreeSet<_> = [(0, (0, 0), (1, 0)), (0, (0, 0), (0, 1))].into();
     let mut seen = HashSet::new();
-    while let Some(Reverse((cost, (x, y), (dx, dy)))) = heap.pop() {
+    while let Some((cost, (x, y), (dx, dy))) = heap.pop_first() {
         if (x, y) == (width - 1, height - 1) {
             return cost;
         }
@@ -40,7 +36,7 @@ fn run(grid: Vec<Vec<usize>>, min_straight: usize, max_straight: usize) -> usize
                 }
                 cost += grid[y as usize][x as usize];
                 if i >= min_straight {
-                    heap.push(Reverse((cost, (x, y), (dx, dy))));
+                    heap.insert((cost, (x, y), (dx, dy)));
                 }
             }
         }
