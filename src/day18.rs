@@ -1,6 +1,3 @@
-use std::collections::{BTreeMap, BTreeSet};
-
-use itertools::Itertools;
 use nom::{
     bytes::complete::tag,
     character::complete::{alphanumeric1, digit1, multispace0, one_of, space0},
@@ -23,50 +20,10 @@ fn parse(input: &str) -> Vec<(char, i64, &str)> {
     .1
 }
 
-#[derive(Default)]
-struct RangeSet {
-    segments: Vec<(i64, i64)>,
-}
-
-impl RangeSet {
-    fn insert(&mut self, mut start: i64, mut end: i64) {
-        let i = self.segments.partition_point(|&(_, e)| e < start);
-        while i != self.segments.len() && self.segments[i].0 <= end {
-            start = self.segments[i].0.min(start);
-            end = self.segments[i].1.max(end);
-            self.segments.remove(i);
-        }
-        self.segments.insert(i, (start, end));
-    }
-
-    fn count(&self, start: i64, end: i64) -> i64 {
-        let mut total = 0;
-        let first_i = self.segments.partition_point(|&(_, e)| e < start);
-        for i in first_i..self.segments.len() {
-            if end <= self.segments[i].0 {
-                break;
-            }
-            total += self.segments[i].1.min(end) - self.segments[i].0.max(start);
-        }
-        total
-    }
-
-    fn contains(&self, p: i64) -> bool {
-        let i = self.segments.partition_point(|&(_, e)| e <= p);
-        if i == self.segments.len() {
-            return false;
-        }
-        self.segments[i].0 <= p
-    }
-}
-
 pub fn run(instrs: impl Iterator<Item = (char, i64)>) -> i64 {
     let instrs: Vec<_> = instrs.collect();
-    let (mut x, mut y) = (0, 0);
-    let (mut xs, mut ys) = (BTreeSet::new(), BTreeSet::new());
-    let mut verticals = BTreeMap::<i64, RangeSet>::new();
-    let mut horizontals = BTreeMap::<i64, RangeSet>::new();
     let mut total_area = 0;
+    let (mut x, mut y) = (0, 0);
     for &(dir, len) in &instrs {
         let (dx, dy) = match dir {
             'R' => (1, 0),
@@ -75,30 +32,11 @@ pub fn run(instrs: impl Iterator<Item = (char, i64)>) -> i64 {
             'U' => (0, -1),
             _ => panic!(),
         };
-        xs.insert(x);
-        ys.insert(y);
         let (x2, y2) = (x + dx * len, y + dy * len);
-        if dx == 0 {
-            let (min, max) = (y.min(y2), y.max(y2));
-            verticals.entry(x).or_default().insert(min, max);
-        } else {
-            let (min, max) = (x.min(x2), x.max(x2));
-            horizontals.entry(y).or_default().insert(min, max + 1);
-        }
+        total_area += len + (y + y2) * (x - x2);
         (x, y) = (x2, y2);
-        total_area += len;
     }
-    for (y1, y2) in ys.into_iter().tuple_windows() {
-        for (&x1, &x2) in xs
-            .iter()
-            .filter(|x| verticals.get(x).is_some_and(|v| v.contains(y1)))
-            .tuples()
-        {
-            total_area += (x2 - x1 - 1) * (y2 - y1);
-            total_area -= horizontals.get(&y1).map_or(0, |h| h.count(x1 + 1, x2));
-        }
-    }
-    total_area
+    total_area / 2 + 1
 }
 
 pub fn solve(input: &str) -> i64 {
