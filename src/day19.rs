@@ -116,7 +116,7 @@ fn count_parts(
                 parts[i].0 = rhs + 1;
                 rem[i].1 = rhs;
             }
-            _ => (),
+            _ => unreachable!(),
         }
         total += count_parts(workflows, res, parts);
     }
